@@ -102,6 +102,12 @@ style output</para>
       </listitem>
     </varlistentry>
     <varlistentry>
+      <term><option>-Headers</option></term>
+      <listitem>
+        <para>Set headers on all requests, in format of name:value pairs. CSV delimited if multple should be set.</para>
+      </listitem>
+    </varlistentry>
+    <varlistentry>
       <term><option>-Help</option></term>
       <listitem>
         <para>Display extended help information.</para>

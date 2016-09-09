@@ -501,6 +501,7 @@ sub general_config {
                "evasion=s"        => \$CLI{'evasion'},
                "findonly"         => \$CLI{'findonly'},
                "Format=s"         => \$CLI{'format'},
+               "Headers=s"        => \$CLI{'headers'},
                "Help"             => \&usage,
                "host=s"           => \$CLI{'host'},
                "id=s"             => \$CLI{'hostauth'},
@@ -534,6 +535,23 @@ sub general_config {
                "404string=s"      => \$CLI{'404string'},
                "404code=s"        => \$CLI{'404code'},
                ) or usage();
+
+     # Headers--CLI overrides conf
+     if ($CONFIGFILE{'HEADERS'} ne '') {
+     	my $temp=$CONFIGFILE{'HEADERS'};
+        $CONFIGFILE{'headers'}='';
+        foreach my $h (parse_csv($temp)) {
+        	my @pair=split(/:/, $h, 2);
+                $CONFIGFILE{'headers'}{$pair[0]}=$pair[1];
+             	}
+	}
+
+     if ($CLI{'headers'} ne '') {
+         foreach my $h (parse_csv($CLI{'headers'})) {
+             my @pair=split(/:/, $h, 2);
+             $CONFIGFILE{'headers'}{$pair[0]}=$pair[1];
+	 }
+     }
 
     # 404string
     if ($CLI{'404string'} ne '') {
@@ -2372,7 +2390,7 @@ sub nfetch {
         $request{'whisker'}->{'data'} = $data;
     }
 
-    # check for extra HTTP headers
+    # check for extra HTTP headers from database
     if (ref($headers_send) eq "HASH") {
 
         # loop through the hash ref passed and add each header to request
@@ -2380,6 +2398,11 @@ sub nfetch {
             $request{$key} = $value;
         }
     }
+
+    # Headers from cli/config
+    while (my ($key, $value) = each(%{$CONFIGFILE{'headers'}})) {
+    	$request{$key} = $value;
+    	}
 
     # set cookies
     if (defined($mark->{'cookiejar'})) {
@@ -2642,6 +2665,7 @@ sub parse_csv {
     push(@new, undef) if substr($text, -1, 1) eq ',';
     return @new;
 }
+
 #######################################################################
 sub check_modules {
     # Check dependencies
@@ -2819,6 +2843,7 @@ sub usage {
                                txt   Plain text
                                xml   XML Format
                                (if not specified the format will be taken from the file extension passed to -output)
+       -Headers           Set headers for all requests in name:value pairs
        -Help              Extended help information
        -host+             Target host
        -404code           Ignore these HTTP codes as negative responses (always). Format is \"302,301\".
