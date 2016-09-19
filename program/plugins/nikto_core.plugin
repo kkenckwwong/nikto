@@ -2925,7 +2925,7 @@ sub usage {
        -vhost+             Virtual host (for Host header)
    		+ requires a value
 
-	Note: This is the short help output. Use -H for full help text.\n\n";
+	Note: This is the short help output. Use -Help for full help text.\n\n";
     }
 
     check_modules();
