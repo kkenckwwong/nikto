@@ -499,7 +499,6 @@ sub general_config {
                "dbcheck"          => \&check_dbs,
                "Display=s"        => \$CLI{'display'},
                "evasion=s"        => \$CLI{'evasion'},
-               "findonly"         => \$CLI{'findonly'},
                "Format=s"         => \$CLI{'format'},
                "Headers=s"        => \$CLI{'headers'},
                "Help"             => \&usage,
@@ -636,12 +635,6 @@ sub general_config {
         $CONFIGFILE{$optione[0]}=$optione[1];
     }
 
-    # deprecated -findonly overrides -Plugins
-    if ($CLI{'findonly'}) {
-        $CLI{'plugins'} =
-          '@@NONE;report_csv;report_json;report_sqlg;report_html;report_text;report_xml;report_nbe';
-    }
-
     # Userdb type: blank is db_tests only, so 'all' is only valid option
     if (defined($CLI{'userdbs'})) {
         if   ($CLI{'userdbs'} =~ /^all$/i) { $CLI{'userdbs'} = 'all'; }
@@ -734,9 +727,9 @@ sub general_config {
     $CLI{'format'}='txt' if $CLI{'format'} eq 'text';
     $CLI{'format'}='htm' if $CLI{'format'} eq 'html';
 
-    if ($CLI{'format'} !~ /^(?:txt|htm|csv|json|sql|nbe|xml|none)$/) { 
-        nprint("+ ERROR: Invalid output format"); 
-        exit; 
+    if ($CLI{'format'} !~ /^(?:txt|htm|csv|json|sql|nbe|xml|none)$/) {
+        nprint("+ ERROR: Invalid output format");
+        exit;
 	}
 
     if ((defined $CLI{'file'}) && ($CLI{'format'} eq "")) {
@@ -1280,7 +1273,7 @@ sub check_dbs {
                 $count++;
                 my @L = parse_csv($line);
                 if ($#L ne 3) { nprint("\t+ ERROR: Invalid syntax ($#L): $line"); next; }
-                if (($L[0] ne 0) && exists($ALL_IDS{$L[0]})) { 
+                if (($L[0] ne 0) && exists($ALL_IDS{$L[0]})) {
                     nprint("\t+ ERROR: Duplicate Test ID: $L[0]");
                 }
                 else { $ALL_IDS{$L[0]}=1; }
@@ -1977,7 +1970,7 @@ sub check_updates {
     # set up our mark
     my %mark = ('ident' => $server,
                 'ssl'   => 1,
-                'port'  => 443 
+                'port'  => 443
                 );
 
     for (my $i = 0 ; $i <= $#ARGV ; $i++) {
@@ -2415,7 +2408,7 @@ sub nfetch {
         $request{'whisker'}->{'version'} = $httpver;
     }
 
-    if ($flags->{'nohost'}) { 
+    if ($flags->{'nohost'}) {
 		$request{'whisker'}->{'host'} = $mark->{'ip'};
 	}
 
