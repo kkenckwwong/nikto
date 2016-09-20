@@ -450,8 +450,10 @@ sub dump_target_info {
         nprint($VARIABLES{'DIV'});
     }
 
-    if ($mark->{banner} ne "") {
-        nprint("+ Server: $mark->{banner}");
+    if (ref $mark->{'banner'}) {
+      foreach my $banner (keys %{$mark->{'banner'}}) {
+        nprint("+ Server: $banner");
+      }
     }
     else {
         nprint("+ Server: No banner retrieved");
@@ -2402,7 +2404,7 @@ sub nfetch {
         LW2::cookie_write($mark->{'cookiejar'}, \%request, 1);
     }
 
-    # over-ride HTTP version
+    # override default HTTP version if passed to nfetch
     my $httpver_old = $request{'whisker'}->{'version'};
     if ($httpver ne '') {
         $request{'whisker'}->{'version'} = $httpver;
@@ -2410,7 +2412,7 @@ sub nfetch {
 
     if ($flags->{'nohost'}) {
 		$request{'whisker'}->{'host'} = $mark->{'ip'};
-	}
+	  }
 
     LW2::http_fixup_request(\%request) unless ($flags->{'noclean'});
 
@@ -2440,46 +2442,42 @@ sub nfetch {
 	$mark->{'terminate'} = 1;
 	}
 
-
     if ($OUTPUT{'debug'}) {
         dump_var("Request Hash", \%request);
         dump_var("Result Hash",  \%result);
     }
 
-    # Snarf what we can from the whisker hash and put in mark
-    if (!exists $result{'whisker'}->{'error'}) {
-        if (!exists $mark->{'banner'}) {
-            $mark->{'banner'} = $result{'server'};
+    # Get the Server banner. LW may return an array.
+#    if (!exists $result{'whisker'}->{'error'}) {   # DO we care if it's an error or just an extra if slowing down each nfetch?
+      if (exists $result{'server'}) {
+        if (ref($result{'server'})) {
+          foreach my $b (@{$result{'server'}}) {
+          if (!exists $mark->{'banner'}->{$b}) {
+              $mark->{'banner'}->{$b}=1;
+            }
+          }
         }
         else {
-
-            # Check banner hasn't changed
-            if (   exists $result{'server'}
-                && !exists $mark->{'bannerchanged'}
-                && ($mark->{'banner'} ne $result{'server'})
-		&& ($result{'server'} ne 'Microsoft-HTTPAPI/2.0')
-		) {
-                nprint(
-                    "+ Server banner has changed from '$mark->{banner}' to '$result{server}' which may suggest a WAF, load balancer or proxy is in place"
-                    );
-                $mark->{'bannerchanged'} = 1;
-            }
+          if (!exists $mark->{'banner'}->{$result{'server'}}) {
+            $mark->{'banner'}->{$result{'server'}}=1;
+          }
         }
+      }
 
-        if (!exists $mark->{'ssl_cipher'} && $mark->{'ssl'}) {
+      # Get SSL details
+      if ($mark->{'ssl'} && !exists $mark->{'ssl_cipher'}) {
+        $mark->{'ssl_cipher'}       = $result{'whisker'}->{'ssl_cipher'};
+        $mark->{'ssl_cert_issuer'}  = $result{'whisker'}->{'ssl_cert_issuer'};
+        $mark->{'ssl_cert_subject'} = $result{'whisker'}->{'ssl_cert_subject'};
 
-            # Grab ssl details
-            $mark->{'ssl_cipher'}       = $result{'whisker'}->{'ssl_cipher'};
-            $mark->{'ssl_cert_issuer'}  = $result{'whisker'}->{'ssl_cert_issuer'};
-            $mark->{'ssl_cert_subject'} = $result{'whisker'}->{'ssl_cert_subject'};
-            # ssl_cert_altnaems comes back as an array
-            foreach my $n (@{$result{'whisker'}->{'ssl_cert_altnames'}}) {
-		next if $n =~ /^[\d]+$/; # type
-		$mark->{'ssl_cert_altnames'} .= "$n, ";
-		}
-            $mark->{'ssl_cert_altnames'} =~ s/, $//;
-        }
-    }
+        # ssl_cert_altnames is an array
+        foreach my $n (@{$result{'whisker'}->{'ssl_cert_altnames'}}) {
+		      next if $n =~ /^[\d]+$/; # type
+		      $mark->{'ssl_cert_altnames'} .= "$n, ";
+		      }
+        $mark->{'ssl_cert_altnames'} =~ s/, $//;
+      }
+#    }
 
     nprint("- $result{'whisker'}{'code'} for $method:\t$result{'whisker'}->{'uri_requested'}", "v");
 

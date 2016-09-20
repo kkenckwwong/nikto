@@ -153,7 +153,6 @@ sub xml_change_vars {
     $variables{"#TEMPL_START#"}              = date_disp($mark->{'start_time'});
     $variables{"#TEMPL_END#"}                = date_disp($mark->{'end_time'});
     $variables{"#TEMPL_NIKTO_VER#"}          = $VARIABLES{'version'};
-    $variables{"#TEMPL_BANNER#"}             = hex_enc($mark->{'banner'});
     $variables{"#TEMPL_NIKTO_CLI#"}          = hex_enc($CLI{'all_options'});
     $variables{"#TEMPL_CTR#"}                = $COUNTERS{'total_checks'};
     $variables{"#TEMPL_NIKTO_HOSTS_TESTED#"} = $COUNTERS{'hosts_completed'};
@@ -167,7 +166,17 @@ sub xml_change_vars {
     $variables{"#TEMPL_SCAN_ELAPSED#"} = $COUNTERS{'scan_elapsed'} . " seconds";
     $variables{"#TEMPL_ERRORS#"}       = $mark->{'total_errors'};
     $variables{"#TEMPL_REFS#"}         = $item->{'refs'};
-    
+
+    my $banner_string="";
+    if (ref $mark->{'banner'}) {
+       foreach my $banner (keys %{$mark->{'banner'}}) {
+        $banner =~ s/"/\\"/g;
+        $banner_string .= "$banner, ";
+       }
+     }
+    $banner_string =~ s/, $//;
+    $variables{"#TEMPL_BANNER#"}             = hex_enc($banner_string);
+
     $variables{"#TEMPL_LINK_NAME#"} = "N/A";
     if ($hostname ne "") {
         $variables{"#TEMPL_LINK_NAME#"} =

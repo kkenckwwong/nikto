@@ -52,12 +52,21 @@ sub json_open {
 # start output
 sub json_host_start {
     my ($handle, $mark) = @_;
-    $mark->{'banner'} =~ s/"/\\"/g;
+
+    my $banner_string="";
+    if (ref $mark->{'banner'}) {
+      foreach my $banner (keys %{$mark->{'banner'}}) {
+      $banner =~ s/"/\\"/g;
+      $banner_string .= "$banner, ";
+      }
+    }
+    $banner_string =~ s/, $//;
+
     my $hostname = $mark->{'vhost'} ? $mark->{'vhost'} : $mark->{'hostname'};
     print $handle "{\"host\":\"$hostname\","
       . "\"ip\":\"$mark->{'ip'}\","
       . "\"port\":\"$mark->{'port'}\","
-      . "\"banner\":\"$mark->{'banner'}\","
+      . "\"banner\":\"$banner_string\","
       . "\"vulnerabilities\":[";
     return;
 }
@@ -67,7 +76,7 @@ sub json_host_end {
     my ($handle, $mark) = @_;
     print $handle "],";
     return;
-}                                                                
+}
 ###############################################################################
 # close output file
 sub json_close {
@@ -91,7 +100,7 @@ sub json_item {
         if (($uri ne '') && ($mark->{'root'} ne '') && ($uri !~ /^$mark->{'root'}/))
 			{ $line .= "\"url\":\"" .$mark->{'root'} . $uri ."\","; }
 		else { $line .= "\"url\":\"" .$uri ."\","; }
-	
+
 		my $msg = $item->{'message'};
 		$uri=quotemeta($uri);
 		my $root = quotemeta($mark->{'root'});
@@ -105,4 +114,3 @@ sub json_item {
 }
 
 1;
-

@@ -48,8 +48,12 @@ sub nikto_msgs {
 
     foreach my $item (@$dbarray) {
         $item->{'server'} = validate_and_fix_regex($item->{'server'});
-        if ($mark->{'banner'} =~ /($item->{'server'})\b/i) {
-            add_vulnerability($mark, "$1 - $item->{'message'}", $item->{'nikto_id'}, $item->{'refs'});
+        if (ref $mark->{'banner'}) {
+          foreach my $banner (keys %{$mark->{'banner'}}) {
+            if ($banner =~ /($item->{'server'})\b/i) {
+              add_vulnerability($mark, "$1 - $item->{'message'}", $item->{'nikto_id'}, $item->{'refs'});
+            }
+          }
         }
     }
 

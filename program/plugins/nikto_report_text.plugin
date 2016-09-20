@@ -51,6 +51,11 @@ sub text_host {
     my $hostname = $mark->{'vhost'} ? $mark->{'vhost'} : $mark->{'hostname'};
     print $handle "+ Target Host: $hostname\n";
     print $handle "+ Target Port: $mark->{port}\n";
+    if (ref $mark->{'banner'}) {
+      foreach my $banner (keys %{$mark->{'banner'}}) {
+        print $handle "+ Server: $banner\n";
+      }
+    }
 }
 
 sub text_item {

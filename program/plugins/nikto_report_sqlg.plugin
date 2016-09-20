@@ -19,7 +19,7 @@
 # SQL Reporting
 # Sample table create (mysql):
 #	create table nikto_table (testid varchar(6) not null, ip varchar(15),
-#	hostname text, port int(5), usessl tinyint(1), refs text, httpmethod text, 
+#	hostname text, port int(5), usessl tinyint(1), refs text, httpmethod text,
 #	uri text, message text, request blob, response blob);
 ###############################################################################
 sub nikto_report_sqlg_init {
@@ -61,13 +61,21 @@ sub sqlg_open {
 # start output
 sub sqlg_host_start {
     my ($handle, $mark) = @_;
-    my $banner = $mark->{'banner'};
-    $banner =~ s/"/\\'/g;
+
+    my $banner_string="";
+    if (ref $mark->{'banner'}) {
+      foreach my $banner (keys %{$mark->{'banner'}}) {
+        $banner =~ s/"/\\'/g;
+        $banner_string .= "$banner, ";
+      }
+    }
+    $banner_string =~ s/, $//;
+
     my $ssl=0;
     if (defined $mark->{'ssl_cipher'}) { $ssl=1; }
     my $hostname = $mark->{'vhost'} ? $mark->{'vhost'} : $mark->{'hostname'};
     my $sql="insert into nikto_table (testid, ip, hostname, port, usessl, osvdb, httpmethod, uri, message) values(";
-    $sql .= "'999958','$mark->{'ip'}','$hostname','$mark->{'port'}','$ssl','0','GET','/','$banner');\n";
+    $sql .= "'999958','$mark->{'ip'}','$hostname','$mark->{'port'}','$ssl','0','GET','/','$banner_string');\n";
 	print $handle $sql;
 
     if (defined $mark->{'ssl_cipher'}) {

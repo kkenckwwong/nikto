@@ -13,7 +13,7 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with this program; if not, write to 
+#  along with this program; if not, write to
 #  Free Software Foundation, 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 ###############################################################################
 # PURPOSE:
@@ -26,7 +26,7 @@ sub nikto_domino_init {
                full_name   => "IBM/Lotus Domino Specific Tests",
                author      => "RealRancor",
                description => "Performs a selection of IBM/Louts Domino specific tests to identify Domino specific files accessible without authentication and the version of the server",
-               hooks       => { scan => { method => \&nikto_domino, }, 
+               hooks       => { scan => { method => \&nikto_domino, },
                                 start => { method => \&nikto_domino_load, },
                               },
                copyright   => "2016 Chris Sullo"
@@ -51,16 +51,29 @@ sub nikto_domino {
     # check domcfg.nsf which should be always there
     my ($res, $content, $error, $request, $response) = nfetch($mark, "/domcfg.nsf", "GET", "", "", "", "Domino detection");
 
-    # quit if banner is not from IBM/Lotus Domino
-    if ($mark->{'banner'} !~ /lotus domino/i &&
-        $mark->{'banner'} !~ /lotus-domino/i &&
-        ( $res ne "200" && $content !~ /src="\/domcfg.nsf\// ) ) {
+    # Test if banner is from IBM/Lotus Domino
+    my $is_domino=0;
+    if (ref $mark->{'banner'}) {
+      foreach my $banner (keys %{$mark->{'banner'}}) {
+      if ($banner =~ /lotus(\s|-)domino/i) {
+        $is_domino=1;
+        last;
+        }
+      }
+    }
+
+    # Test if content indicates IBM/Lotus Domino
+    if (!$is_domino && $res eq "200" && $content =~ /src="\/domcfg.nsf\// ) {
+      $is_domino=1;
+      }
+
+    if (!$is_domino) {
         nprint("+ nikto_domino.plugin: No IBM/Lotus Domino Server based on the banner '$mark->{'banner'}' or /domcfg.nsf detected.", "d");
         return;
     }
 
     nprint("+ nikto_domino.plugin: IBM/Lotus Domino Server based on the banner '$mark->{'banner'}' or /domcfg.nsf detected, try to identifiy files accessible without authentication.");
- 
+
     # Identify version of the Domino Server, some files have lower versions than others
     foreach my $uri ('/download/filesets/l_LOTUS_SCRIPT.inf', '/download/filesets/n_LOTUS_SCRIPT.inf', '/download/filesets/l_SEARCH.inf', '/download/filesets/n_SEARCH.inf') {
         my ($res, $content, $error, $request, $response) = nfetch($mark, $uri, "GET", "", "", "", "Domino detection");
