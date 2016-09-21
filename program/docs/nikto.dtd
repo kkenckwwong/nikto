@@ -1,3 +1,5 @@
+<!ELEMENT nikto ANY>
+
 <!ELEMENT niktoscan (scandetails*,statistics?)>
 <!ATTLIST niktoscan hoststest CDATA #IMPLIED>
 <!ATTLIST niktoscan options CDATA #REQUIRED>
@@ -24,7 +26,7 @@
 <!ATTLIST ssl issuers CDATA #REQUIRED>
 <!ATTLIST ssl info CDATA #REQUIRED>
 
-<!ELEMENT item (description,uri?,namelink?,iplink?)>
+<!ELEMENT item (description,uri?,namelink?,iplink?,references?)>
 <!ATTLIST item id CDATA #REQUIRED>
 <!ATTLIST item method CDATA #IMPLIED>
 
