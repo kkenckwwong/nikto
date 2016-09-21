@@ -55,8 +55,8 @@ letter to specify the type. Multiple may be used:</para>
       <term><option>-evasion</option></term>
       <listitem>
         <para>Specify the LibWhisker encoding/evasion technique to use (see the
-LibWhisker docs for detailed information on these). Note that these are not 
-likely to actually bypass a modern IDS system, but may be useful for other 
+LibWhisker docs for detailed information on these). Note that these are not
+likely to actually bypass a modern IDS system, but may be useful for other
 purposes. Use the reference number to specify the type, multiple may be used:</para>
         <para>1 - Random URI encoding (non-UTF8)</para>
         <para>2 - Directory self-reference (/./)</para>
@@ -220,9 +220,9 @@ type requests)</para>
 		taken from the file extension. This can be over-riden by using the
 		-Format option (e.g. to write text files with a different extenstion.
 		Existing files will have new information appended.</para>
-	<para>A single dot (.) may be specified for the output file name, in which case 
-		the file name will be automatically generated based on the target being 
-		tested. Note that the -Format option is required when this is used. The 
+	<para>A single dot (.) may be specified for the output file name, in which case
+		the file name will be automatically generated based on the target being
+		tested. Note that the -Format option is required when this is used. The
 		scheme is: nikto_HOSTNAME_PORT_TIMESTAMP.FORMAT</para>
 	<para>For '-Format sql' a sample MySQL table create might look like:
 		create table nikto_table (testid varchar(6) not null, ip varchar(15), hostname text, port int(5), usessl tinyint(1), osvdb int, httpmethod text, uri text, message text, request blob, response blob);</para>
@@ -273,10 +273,10 @@ HTTP request will have to timeout first.</para>
     <varlistentry>
       <term><option>-Save</option></term>
       <listitem>
-        <para>Save request/response of findings to this directory. Files are 
-plain text and will contain the raw request/response as well as JSON strings 
-for each. Use a "." to auto-generate a directory name for each target. These 
-saved items can be replayed by using the included replay.pl script, which can 
+        <para>Save request/response of findings to this directory. Files are
+plain text and will contain the raw request/response as well as JSON strings
+for each. Use a "." to auto-generate a directory name for each target. These
+saved items can be replayed by using the included replay.pl script, which can
 route items through a proxy.</para>
       </listitem>
     </varlistentry>
@@ -290,11 +290,10 @@ is 10 seconds.</para>
     <varlistentry>
       <term><option>-Tuning</option></term>
       <listitem>
-        <para>Tuning options will control the test that Nikto will use
-against a target. By default, all tests are performed. If any options are 
-specified, only those tests will be performed. If the "x" option is used, 
-it will reverse the logic and exclude only those tests. Use the reference
-number or letter to specify the type, multiple may be used:</para>
+        <para>Tuning options will control the tests that Nikto will use
+against a target. By default, all tests except Legacy are performed. If any options are
+specified, those tests will be excluded (Legacy checks are implicitly enabled). 
+Use the reference number or letter to specify the type; multiple may be used:</para>
         <para>0 - File Upload</para>
         <para>1 - Interesting File / Seen in logs</para>
         <para>2 - Misconfiguration / Default File</para>
@@ -309,21 +308,17 @@ number or letter to specify the type, multiple may be used:</para>
         <para>b - Software Identification</para>
         <para>e - Administration Console</para>
         <para>c - Remote Source Inclusion</para>
-        <para>x - Reverse Tuning Options (i.e., include all except
-specified)</para>
-        <para>The given string will be parsed from left to right, any x
-        characters will apply to all characters to the right of the
-        character.</para>
+        <para>A - All tests (adds Legacy checks)</para>
       </listitem>
     </varlistentry>
     <varlistentry>
       <term><option>-Userdbs</option></term>
       <listitem>
         <para>Load user defined databases instead of standard databases. User defined
-        databases follow the same syntax as the standard files, but are prefixed with 
+        databases follow the same syntax as the standard files, but are prefixed with
         a 'u', e.g., 'udb_tests'</para>
 	<para>all - Disable all standard databases and load only user databases</para>
-	<para>tests - Disable db_tests and load udb_tests. All other databases are 
+	<para>tests - Disable db_tests and load udb_tests. All other databases are
         loaded normally.</para>
       </listitem>
     </varlistentry>

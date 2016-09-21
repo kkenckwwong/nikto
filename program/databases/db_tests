@@ -170,7 +170,7 @@
 "000138","","4","/basilix/mbox-list.php3","GET","200","","","","","BasiliX webmail application prior to 1.1.1 contains a XSS issue in 'message list' function/page","",""
 "000139","","4","/basilix/message-read.php3","GET","200","","","","","BasiliX webmail application prior to 1.1.1 contains a XSS issue in 'read message' function/page","",""
 "000140","","4","/clusterframe.jsp","GET","200","","","","","Macromedia JRun 4 build 61650 remote administration interface is vulnerable to several XSS attacks.","",""
-"000141","","4","/IlohaMail/blank.html","GET","200","","","","","IlohaMail 0.8.10 contains a XSS vulnerability. Previous versions contain other non-descript vulnerabilities.","",""
+"000141","","4L","/IlohaMail/blank.html","GET","200","","","","","IlohaMail 0.8.10 contains a XSS vulnerability. Previous versions contain other non-descript vulnerabilities.","",""
 "000142","","8","/bb-dnbd/faxsurvey","GET","200","","","","","This may allow arbitrary command execution.","",""
 "000143","","8","/cartcart.cgi","GET","200","","","","","If this is Dansie Shopping Cart 3.0.8 or earlier, it contains a backdoor to allow attackers to execute arbitrary commands.","",""
 "000144","OSVDB-6591","8","/scripts/Carello/Carello.dll","GET","200","","","","","Carello 1.3 may allow commands to be executed on the server by replacing hidden form elements. This could not be tested by Nikto.","",""
