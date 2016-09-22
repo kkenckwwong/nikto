@@ -126,9 +126,6 @@
       Windows support for SSL is dependent on the installation package, but is
       rumored to exist for ActiveState's Perl.</para>
 
-      <para>For support for logging to Metasploit, the RPC::XML and
-      RPC::XML::Client modules must be installed. Nikto will operate without
-      these modules, but the functionality will not be available.</para>
 
       <itemizedlist>
         <listitem>
@@ -149,11 +146,6 @@
         <listitem>
           <para>OpenSSL: <ulink
           url="http://www.openssl.org/">http://www.openssl.org/</ulink></para>
-        </listitem>
-
-        <listitem>
-          <para>Perl modules RPC::XML::Client and RPC::XML for Metasploit
-          logging integration</para>
         </listitem>
 
         <listitem>
