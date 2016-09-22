@@ -549,26 +549,28 @@ http://192.168.0.1:8080/
       <title>Scan Tuning</title>
 
       <para>Scan tuning can be used to decrease the number of tests performed
-      against a target. By specifying the type of test to include or exclude,
-      faster, focused testing can be completed. This is useful in situations
-      where the presence of certain file types are undesired -- such as XSS or
+      against a target. By specifying only the desired test types, somewhat
+      faster and more focused testing can be completed. This is useful in situations
+      where the presence of certain vulnerability checks are undesired -- such as XSS or
       simply "interesting" files.</para>
+
+      <para>Note that tests often have multiple tuning types if they cover multiple
+      categories, such as a file that is Information Disclosure and Software
+      Identification.</para>
 
       <para>Test types can be controlled at an individual level by specifying
       their identifier to the <parameter>-T</parameter>
-      (<parameter>-Tuning</parameter>) option. In the default mode, if
-      <parameter>-T</parameter> is invoked only the test type(s) specified
-      will be executed. For example, only the tests for "Remote file
-      retrieval" and "Command execution" can performed against the
-      target:</para>
+      (<parameter>-Tuning</parameter>) option. If <parameter>-T</parameter> is
+      invoked only the test type(s) specified will be executed. For example,
+      only the tests for "Remote file retrieval" and "Command execution" will be
+      performed against the target:</para>
 
       <screen>perl nikto.pl -h 192.168.0.1 -T 58</screen>
 
-      <para>If an "x" is passed to <parameter>-T</parameter> then this will
-      negate all tests of types following the x. This is useful where a test
-      may check several different types of exploit. For example:</para>
+      <para>By default, "Legacy" checks, or those checks with low perceived value,
+      are disabled. To enable these, using the Tuning alias "A" for All checks:</para>
 
-      <screen>perl nikto.pl -h 192.168.0.1 -T 58xb</screen>
+      <screen>perl nikto.pl -h 192.168.0.1 -T A</screen>
 
       <para>The valid tuning options are:</para>
 
@@ -652,9 +654,7 @@ http://192.168.0.1:8080/
         </listitem>
 
         <listitem>
-          <para>x - Reverse Tuning Options. Perform exclusion of the specified
-          tuning type instead of inclusion of the specified tuning
-          type.</para>
+          <para>A - Enable all tests, including Legacy checks.</para>
         </listitem>
       </itemizedlist>
     </section>
@@ -1714,7 +1714,7 @@ DOCDIR=EXECDIR/docs</screen>
                                        method =&gt; \&amp;nikto_auth_pre,
                                        weight =&gt; 19,
                                     },
-                                   },                   
+                                   },
                copyright        =&gt; "2010 Chris Sullo"
                };
 
