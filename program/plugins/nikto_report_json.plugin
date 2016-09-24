@@ -41,11 +41,11 @@ sub json_open {
     my ($file) = @_;
 
     # Open file and produce header
-    open(OUT, ">>$file") || die print STDERR "+ ERROR: Unable to open '$file' for write: $@\n";
+    open(JSONOUT, ">>$file") || die print STDERR "+ ERROR: Unable to open '$file' for write: $@\n";
 
     # Write header
-#    print OUT "\"$VARIABLES{'name'} - v$VARIABLES{'version'}/$VARIABLES{'core_version'}\"\n";
-    return OUT;
+#    print JSONOUT "\"$VARIABLES{'name'} - v$VARIABLES{'version'}/$VARIABLES{'core_version'}\"\n";
+    return JSONOUT;
 }
 
 ###############################################################################
@@ -83,7 +83,7 @@ sub json_close {
     my ($handle, $mark) = @_;
     print $handle "}\n";
     close($handle);
-    return OUT;
+    return JSONOUT;
 }
 ###############################################################################
 # print an item

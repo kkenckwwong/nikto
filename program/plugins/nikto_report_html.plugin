@@ -43,13 +43,13 @@ sub html_head {
     print STDERR "+ ERROR: Output file not specified.\n" if $file eq '';
 
     # Write header for html file, return file handle
-    open(OUT, ">>$file") || die print STDERR "+ ERROR: Unable to open '$file' for write: $@\n";
+    open(HTMOUT, ">>$file") || die print STDERR "+ ERROR: Unable to open '$file' for write: $@\n";
 
     my $html = html_change_vars($TEMPLATES{'htm_start'});
     $html =~ s/\#NIKTODTD#/$CONFIGFILE{'NIKTODTD'}/;
-    print OUT "$html";
+    print HTMOUT "$html";
 
-    return OUT;
+    return HTMOUT;
 }
 ###############################################################################
 sub html_close {

@@ -122,7 +122,9 @@ foreach my $mark (@MARKS) {
 }
 
 # Open reporting
-report_head($CLI{'format'}, $CLI{'file'});
+foreach my $file (keys %{$VARIABLES{'OUTFILES'}}) {
+  report_head($VARIABLES{'OUTFILES'}{$file}, $file);
+}
 
 # Load db_tests
 set_scan_items();

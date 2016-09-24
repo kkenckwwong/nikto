@@ -677,77 +677,36 @@ sub general_config {
         }
     }
 
-    # auto-generate file name
-    if (($CLI{'file'} eq '.') && ($CLI{'format'} eq '')) {
-            nprint("+ ERROR: Output format must be used with auto file naming");
-            exit;
+    # Output files
+    if (defined($CLI{'file'})) {
+      my @outputs=split(/,/,$CLI{'file'});
+      foreach my $output (@outputs) {
+        if ($output eq '.') {
+          if ($CLI{'format'} eq '') {
+              nprint("+ ERROR: Output format must be used with auto file naming");
+              exit;
+          }
+          # Generate filename
+          my $fname = generate_savefile($CLI{'format'});
+          $VARIABLES{'OUTFILES'}{$fname}=$CLI{'format'};
         }
-
-    if ($CLI{'file'} eq '.') {
-
-        my $hn = $CLI{'host'};
-        $hn =~ s/[^a-zA-Z0-9\.\-\_]/_/g;
-        $hn =~ s/_+/_/g;
-        my $port = $CLI{'ports'};
-        $port =~ s/,/\-/g;
-        $port =~ s/[^a-zA-Z0-9\.\-\_]/_/g;
-        my $now = date_disp(time());
-        $now =~ s/[^0-9-]/-/g;
-        $CLI{'file'} = "nikto_" . $hn . "_" . $port . "_" . $now . "." . $CLI{'format'};
-        $CLI{'file'} =~ s/_+/_/g;
-
-        # exists?
-        if (-e $CLI{'file'}) {
-            $CLI{'file'} =~ /^(.*)(\.[a-z]{3})/;
-            my $fn     = $1;
-            my $ext    = $2;
-            my $ctr    = 0;
-            my $exists = 1;
-            while ($exists) {
-                $ctr++;
-                if (!-e $fn . "_" . $ctr . $ext) {
-                    $CLI{'file'} = $fn . "_" . $ctr . $ext;
-                    $exists = 0;
-                }
+        else {
+          $format = lc($output);
+          $format =~ s/(^.*\.)([^.]*$)/$2/g;
+          $format='txt' if $format eq 'text';
+          $format='htm' if $format eq 'html';
+          if ($format !~ /^(?:txt|htm|csv|json|sql|nbe|xml)$/) {
+              nprint("+ ERROR: Invalid output format for '$output'");
+              exit;
+      	    }
+          # verify readable dtd
+          if ($format eq 'xml' && !-r $CONFIGFILE{'NIKTODTD'}) {
+                nprint("+ ERROR: reading DTD");
+                exit;
             }
+          $VARIABLES{'OUTFILES'}{$output}=$format;
         }
-        nprint("- Auto-generated save file: $CLI{'file'}", "v");
-    }
-
-    # output file
-    if (!defined $CLI{'format'}) {
-
-        # Check what output has
-        $CLI{'format'} = "none";
-        if (defined $CLI{'file'}) {
-            $CLI{'format'} = lc($CLI{'file'});
-            $CLI{'format'} =~ s/(^.*\.)([^.]*$)/$2/g;
-        }
-    }
-
-    $CLI{'format'}=lc($CLI{'format'});
-    $CLI{'format'}='txt' if $CLI{'format'} eq 'text';
-    $CLI{'format'}='htm' if $CLI{'format'} eq 'html';
-
-    if ($CLI{'format'} !~ /^(?:txt|htm|csv|json|sql|nbe|xml|none)$/) {
-        nprint("+ ERROR: Invalid output format");
-        exit;
-	}
-
-    if ((defined $CLI{'file'}) && ($CLI{'format'} eq "")) {
-        nprint("+ERROR: Output file specified without a format");
-        exit;
-    }
-
-    if ((!defined $CLI{'file'}) && ($CLI{'format'} ne "none")) {
-        nprint("+ERROR: Output file format specified without a name");
-        exit;
-    }
-
-    # verify readable dtd
-    if ($CLI{'format'} eq 'xml' && !-r $CONFIGFILE{'NIKTODTD'}) {
-        nprint("+ ERROR: reading DTD");
-        exit;
+      }
     }
 
     # screen output
@@ -878,6 +837,41 @@ sub general_config {
 }
 
 ###############################################################################
+sub generate_savefile {
+  my $format=$_[0] || "txt";
+  my $outfile="";
+  my $hn = $CLI{'host'};
+  $hn =~ s/[^a-zA-Z0-9\.\-\_]/_/g;
+  $hn =~ s/_+/_/g;
+  my $port = $CLI{'ports'};
+  $port =~ s/,/\-/g;
+  $port =~ s/[^a-zA-Z0-9\.\-\_]/_/g;
+  my $now = date_disp(time());
+  $now =~ s/[^0-9-]/-/g;
+  $outfile = "nikto_" . $hn . "_" . $port . "_" . $now . "." . $format;
+  $outfile =~ s/_+/_/g;
+
+  # exists?
+  if (-e $outfile) {
+      $outfile =~ /^(.*)(\.[a-z]{3})/;
+      my $fn     = $1;
+      my $ext    = $2;
+      my $ctr    = 0;
+      my $exists = 1;
+      while ($exists) {
+        $ctr++;
+        if (!-e $fn . "_" . $ctr . $ext) {
+            $outfile = $fn . "_" . $ctr . $ext;
+            $exists = 0;
+        }
+      }
+    }
+
+  nprint("- Auto-generated save file: $outfile", "v");
+  return $outfile;
+}
+
+###############################################################################
 sub time_to_seconds {
     my $time = $_[0] || return;
     if ($time =~ /m$/i) {
@@ -905,10 +899,6 @@ sub safe_quit {
 
     $mark->{'end_time'} = time();
     $mark->{'elapsed'}  = $mark->{'end_time'} - $mark->{'start_time'};
-
-    #if ($mark->{'start_time'} ne '') {
-    #report_host_end($mark);
-    #}
 
     report_host_end($mark);
     report_summary($mark);
@@ -1891,7 +1881,6 @@ sub report_head {
                                          summary    => $plugin->{report_summary},
                                          handle     => $handle,
                                          };
-
                     push(@REPORTS, $report_entry);
                 }
             }
@@ -2830,6 +2819,7 @@ sub usage {
                                txt   Plain text
                                xml   XML Format
                                (if not specified the format will be taken from the file extension passed to -output)
+                               (required if the shorthand . is used for output file name)
        -Headers           Set headers for all requests in name:value pairs
        -Help              Extended help information
        -host+             Target host
@@ -2851,7 +2841,7 @@ sub usage {
        -nossl             Disables the use of SSL
        -no404             Disables nikto attempting to guess a 404 page
        -Option            Over-ride an option in nikto.conf, can be issued multiple times
-       -output+           Write output to this file ('.' for auto-name)
+       -output+           Write output to this file ('.' for auto-name which then requires -Format)
        -Pause+            Pause between tests (seconds, integer or float)
        -Plugins+          List of plugins to run (default: ALL)
        -port+             Port to use (default 80)
