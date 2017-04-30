@@ -5,7 +5,7 @@
 <!ENTITY options SYSTEM "sections/options.xml">
 ]>
 <book>
-  <title>Nikto v2.1.5 - The Manual</title>
+  <title>Nikto v2.2.0 - The Manual</title>
 
   <chapter id="introduction">
     <title>Introduction</title>
