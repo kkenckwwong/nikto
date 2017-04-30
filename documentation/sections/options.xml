@@ -117,7 +117,7 @@ style output</para>
         <para>Ignore these HTTP codes as negative responses (always). Format is "302,301".</para>
       </listitem>
     </varlistentry>
-    <varlistentry>
+   
     <varlistentry>
       <term><option>-404string</option></term>
       <listitem>
