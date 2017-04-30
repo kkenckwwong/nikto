@@ -899,6 +899,8 @@ sub safe_quit {
 
     $mark->{'end_time'} = time();
     $mark->{'elapsed'}  = $mark->{'end_time'} - $mark->{'start_time'};
+    $COUNTERS{'scan_end'}     = time();
+    $COUNTERS{'scan_elapsed'} = ($COUNTERS{'scan_end'} - $COUNTERS{'scan_start'});
 
     report_host_end($mark);
     report_summary($mark);
