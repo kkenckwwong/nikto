@@ -84,13 +84,21 @@ sub nikto_headers_postfetch {
     }
 
     # look for inode in etag header
-    if (!defined $ETAGS{$mark->{hostname}}{$mark->{port}} && defined $result->{'etag'} && $result->{'etag'} =~ m/-/) {
-        my $etag = $result->{'etag'};
-        $etag =~ s/"//g;
-        my @fields = split("-", $etag);
-        my $message = "Server leaks inodes via ETags, header found with file " . $request->{'whisker'}->{'uri'};
-        if ($#fields == 2) {
+    if (defined $result->{'etag'} && !defined $ETAGS{$mark->{hostname}}{$mark->{port}}) {
+        my @etags;
+        if (ref($result->{'etag'}) eq ARRAY) {
+          foreach my $et (@{ $result->{'etag'} }) {
+            push(@etags,$et);
+            }
+          }
+        else { push(@etags,$result->{'etag'}); }
 
+        foreach my $etag (@etags) {
+          next if $etag !~ m/-/;
+          $etag =~ s/"//g;
+          my @fields = split("-", $etag);
+          my $message = "Server leaks inodes via ETags, header found with file " . $request->{'whisker'}->{'uri'};
+          if ($#fields == 2) {
             # check for numbers that are too large
             my $ishex = 1;
             for (my $i = 0 ; $i < 3 ; $i++) {
@@ -108,56 +116,65 @@ sub nikto_headers_postfetch {
               ($ishex == 1)
               ? sprintf(", inode: %d, size: %d, mtime: %s", hex($inode), hex($size), scalar(localtime($ltime)) )
               : sprintf(", inode: %s, size: %s, mtime: %s", $inode,      $size,      $mtime);
-        }
+              }
         else {
             $message .= ", fields: ";
             foreach my $field (@fields) {
                 $message .= "0x$field ";
+                }
             }
-        }
         add_vulnerability($mark, $message, 999984, "", $request->{'whisker'}->{'method'}, $request->{'whisker'}->{'uri'}, $request, $result);
-		$ETAGS{$mark->{hostname}}{$mark->{port}}=1;
+		    $ETAGS{$mark->{hostname}}{$mark->{port}}=1;
     }
+  }
 
 	# Look for X-Frame-Options
-	if (!$XFRAME{$mark->{hostname}}{$mark->{port}} && defined $result)
+	if (!$XFRAME{$mark->{hostname}}{$mark->{port}} && defined $result->{'x-frame-options'})
 	{
-		if (defined $result->{'x-frame-options'}) {
-			if ($result->{'x-frame-options'} =~ /^ALLOW-FROM/) {
-				my $allowed = $result->{'x-frame-options'};
-				$allowed =~ s/^.* //g;
-				add_vulnerability($mark,"X-Frame-Options header is set to allow framing from $allowed. This is only supported in Internet Explorer and may lead to the header being ignored.", 999978, "", $request->{'whisker'}->{'method'}, $request->{'whisker'}->{'uri'}, $request, $result);
+    my @xfo;
+    if (ref($result->{'x-frame-options'}) eq ARRAY) {
+    push(@xfo,@{ $result->{'x-frame-options'}});
+     }
+    else {
+    push(@xfo,$result->{'x-frame-options'});
+    }
+
+    foreach my $xf (@xfo) {
+		  if ($xf =~ /^ALLOW-FROM/) {
+				$xf =~ s/^.* //g;
+				add_vulnerability($mark,"X-Frame-Options header is set to allow framing from \"$xf\". This is only supported in older browsers but is deprecated by Content-Security Policy (CSP 2).", 999978, "", $request->{'whisker'}->{'method'}, $request->{'whisker'}->{'uri'}, $request, $result);
 			}
-		}
-		else {
-			add_vulnerability($mark,"The anti-clickjacking X-Frame-Options header is not present.", 999957, "", $request->{'whisker'}->{'method'}, $request->{'whisker'}->{'uri'}, $request, $result);
 		}
 		$XFRAME{$mark->{hostname}}{$mark->{port}}=1;
-	}
+    }
 
 	# X-XSS-Protection
-	if (!$XSSPROTECTION{$mark->{hostname}}{$mark->{port}} && defined $result)
+	if (!$XSSPROTECTION{$mark->{hostname}}{$mark->{port}} && defined $result->{'x-xss-protection'})
 	{
-		if (defined $result->{'x-xss-protection'}) {
-			# Parse this and see whether it's set to 0
-			if ($result->{'x-xss-protection'} =~ /^0/) {
+    my @xxss;
+		if (ref($result->{'x-xss-protection'}) eq ARRAY) {
+      push(@xxss, @{ $result->{'x-xss-protection'} });
+      }
+    else { push(@xxss, $result->{'x-xss-protection'}); }
+
+    foreach my $x (@xxss) {
+      # Parse this and see whether it's set to 0
+      if ($x =~ /^0/) {
 				add_vulnerability($mark, "X-XSS-Protection header has been set to disable XSS Protection. There is unlikely to be a good reason for this.", 999101, "", $request->{'whisker'}->{'method'}, $request->{'whisker'}->{'uri'}, $request, $result);
 				$XSSPROTECTION{$mark->{hostname}}{$mark->{port}}=1;
+        }
 			}
 		}
-	}
+
 	# And for if it's not defined
-	if (!$HEADERS_XXP{$mark->{hostname}}{$mark->{port}} && defined $result)
+	if (!$HEADERS_XXP{$mark->{hostname}}{$mark->{port}} && !defined $result->{'x-xss-protection'})
 	{
-		if (!defined $result->{'x-xss-protection'}) {
-			add_vulnerability($mark,"The X-XSS-Protection header is not defined. This header can hint to the user agent to protect against some forms of XSS", 999102, "", $request->{'whisker'}->{'method'}, $request->{'whisker'}->{'uri'}, $request, $result);
-		}
+		add_vulnerability($mark,"The X-XSS-Protection header is not defined. This header can help tell the browser to protect against some forms of XSS", 999102, "", $request->{'whisker'}->{'method'}, $request->{'whisker'}->{'uri'}, $request, $result);
 		$HEADERS_XXP{$mark->{hostname}}{$mark->{port}}=1;
 	}
 
-    # Look for any uncommon headers
-
-    foreach my $header (keys %$result) {
+  # Look for any uncommon headers
+  foreach my $header (keys %$result) {
         my $found = 0;
         foreach my $st_header (@$HEADERSDB) {
             if ($header eq $st_header->{'header'}) {
@@ -165,15 +182,20 @@ sub nikto_headers_postfetch {
             }
 	    elsif (defined $HFOUND{$header}{$mark->{'hostname'}})    { $found=1; }
         }
-        if ($found == 0) {
-            my $x = $result->{$header};
-            $x =~ s/\s+.*$//;
-            $mark->{'components'}->{$x} = 1;
-            add_vulnerability($mark, "Uncommon header '$header' found, with contents: $result->{$header}", 999100, "", $request->{'whisker'}->{'method'}, $request->{'whisker'}->{'uri'}, $request, $result);
-            $reportnum++;
-	    $HFOUND{$header}{$mark->{'hostname'}}=1;
+      if (!$found) {
+        my @vals;
+        if (ref($result->{$header}) eq ARRAY) {
+          @vals = @{ $result->{$header} };
+          }
+        else { push(@vals, $result->{$header}); }
+        foreach my $x (@vals) {
+          $x =~ s/\s+.*$//;
+          $mark->{'components'}->{$x} = 1;
+          add_vulnerability($mark, "Uncommon header '$header' found, with contents: $x", 999100, "", $request->{'whisker'}->{'method'}, $request->{'whisker'}->{'uri'}, $request, $result);
+	        $HFOUND{$header}{$mark->{'hostname'}}=1;
+          }
         }
-    }
+      }
 
 	if ($mark->{'ssl'} && !$HEADERS_STS{$mark->{hostname}}{$mark->{port}} && defined $result)
 	{
@@ -194,7 +216,10 @@ sub nikto_headers_postfetch {
 	if (!$HEADERS_XCO{$mark->{hostname}}{$mark->{port}} && defined $result)
 	{
 		if (defined $result->{'x-clacks-overhead'}) {
-			add_vulnerability($mark, "There appears to be clacks overhead on the server, the message is: $result->{'x-clacks-overhead'}", 999104, "", $request->{'whisker'}->{'method'}, $request->{'whisker'}->{'uri'}, $request, $result);
+      my $xco;
+      if (ref($result->{'x-clacks-overhead'}) eq ARRAY) { $xco=join(", ",@{ $result->{'x-clacks-overhead'} }); }
+      else { $xco = $result->{'x-clacks-overhead'}; }
+			add_vulnerability($mark, "There appears to be clacks overhead on the server, the message is: $xco", 999104, "", $request->{'whisker'}->{'method'}, $request->{'whisker'}->{'uri'}, $request, $result);
 			$HEADERS_XCO{$mark->{hostname}}{$mark->{port}}=1;
 		}
 	}
@@ -203,8 +228,8 @@ sub nikto_headers_postfetch {
 }
 
 sub nikto_headers_check {
-    return if $mark->{'terminate'};
     my ($mark, $result, $header, $message, $tid, $request) = @_;
+    return if $mark->{'terminate'};
 
     if (exists $result->{$header}) {
         my $key =
@@ -216,17 +241,22 @@ sub nikto_headers_check {
                    . $header);
 
         if (!exists $HFOUND{$key}) {
-            my $value = $result->{$header};
+            my $value;
+            if (ref($result->{$header}) eq ARRAY) {
+              $value = join(', ', @{ $result->{$header} });
+              }
+            else {
+              $value = $result->{$header};
+              }
             $HFOUND{$key} = $value;
-
             add_vulnerability($mark, $message . " " . $value, $tid, "", $request->{'whisker'}->{'method'}, $request->{'whisker'}->{'uri'}, $request, $result);
         }
     }
 }
 
 sub nikto_headers {
+    #my ($mark) = @_;
     return if $mark->{'terminate'};
-    my ($mark) = @_;
 
     #######################################################################
     # look for to see whether its vulnerable to the Translate: f
@@ -249,36 +279,65 @@ sub nikto_headers {
 
     #######################################################################
     # Content-Location header in IIS
-    my %locheaders, %locflags, $cl, $l, $wa; 
-    $locheaders{'User-Agent'} = $VARIABLES{'useragent'}; 
-    $locheaders{'User-Agent'} =~ s/\@TESTID/headers:\ IIS\ internal\ IP/; 
+    my (%locheaders, %locflags, $cl, $l, $wa);
+    $locheaders{'User-Agent'} = $VARIABLES{'useragent'};
+    $locheaders{'User-Agent'} =~ s/\@TESTID/headers:\ IIS\ internal\ IP/;
     $locflags{'noclean'} = 1;
     $locflags{'nohost'} = 1;
     $cl = $l = $wa = 0;
 
 	foreach my $uri ('/', '/images', '/Autodiscover/Autodiscover.xml', '/Autodiscover/', '/Microsoft-Server-ActiveSync', '/Microsoft-Server-ActiveSync/default.css', '/ECP', '/EWS', '/EWS/Exchange.asmx','/Exchange', '/OWA', '/Microsoft-Server-ActiveSync/default.eas', '/Rpc', '/EWS/Services.wsdl', '/ecp', '/OAB', '/aspnet_client', '/PowerShell') {
-		my ($res, $content, $errors, $request, $result) =  nfetch($mark, $uri, "GET", "", \%locheaders, \%locflags, "headers: HTTP 1.0 internal IP", "1.0"); 
+		my ($res, $content, $errors, $request, $result) =  nfetch($mark, $uri, "GET", "", \%locheaders, \%locflags, "headers: HTTP 1.0 internal IP", "1.0");
 
-		if (!$cl && ($result->{'content-location'} ne "") 
-			&& ($result->{'content-location'} =~ /[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/) 
-			&& ($result->{'content-location'} !~ /$mark->{'ip'}/)) { 
+		if (!$cl && defined($result->{'content-location'})) {
+      my @vals;
+      if (ref($result->{'content-location'}) eq ARRAY) {
+        @vals = @{ $result->{'content-location'} };
+        }
+      else {
+        push(@vals, $result->{'content-location'});
+        }
+      foreach my $val (@vals) {
+  	   if ($val =~ /[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/ && ($val !~ /$mark->{'ip'}/)) {
 				$cl=1;
-				add_vulnerability($mark, "IIS may reveal its internal IP or real IP in the Content-Location header via a request over HTTP/1.0. The value is \"$result->{'content-location'}\".", 999989, "OSVDB-630", "GET", "$uri", $request, $result);
-		}  
-		if (!$l && ($result->{'location'} ne "") 
-			&& ($result->{'location'} =~ /[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/) 
-			&& ($result->{'location'} !~ /$mark->{'ip'}/)) { 
-				$l=1;
-				add_vulnerability($mark, "The webserver may reveal its internal or real IP in the Location header via a request over HTTP/1.0. The value is \"$result->{'location'}\".", 999988, "OSVDB-630", "GET", "$uri", $request, $result);
-		}
-		if (!$wa && ($result->{'www-authenticate'} ne "") 
-			&& ($result->{'www-authenticate'} =~ /[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/) 
-			&& ($result->{'www-authenticate'} !~ /$mark->{'ip'}/)) { 
-				$wa=1;
-				add_vulnerability($mark, "Microsoft Exchange Systems (CAS and OWA) may reveal the internal or real IP in the WWW-Authenticate header via a request over HTTP/1.0. The value is \"$result->{'www-authenticate'}\".", 999986, 630, "GET", "$uri", $request, $result);
-		}
-	}
-	
+				add_vulnerability($mark, "IIS may reveal its internal IP or real IP in the Content-Location header via a request over HTTP/1.0. The value is \"$val\".", 999989, "OSVDB-630", "GET", "$uri", $request, $result);
+        }
+      }
+    }
+
+		if (!$l && defined($result->{'location'}))  {
+      my @vals;
+      if (ref($result->{'location'}) eq ARRAY) {
+        @vals = @{ $result->{'location'} };
+        }
+      else {
+        push(@vals, $result->{'location'});
+        }
+      foreach my $val (@vals) {
+			   if ($val =~ /[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/ && ($val !~ /$mark->{'ip'}/)) {
+				     $l=1;
+				     add_vulnerability($mark, "The webserver may reveal its internal or real IP in the Location header via a request over HTTP/1.0. The value is \"$result->{'location'}\".", 999988, "OSVDB-630", "GET", "$uri", $request, $result);
+		         }
+          }
+      }
+
+		if (!$wa && defined($result->{'www-authenticate'})) {
+      my @vals;
+      if (ref($result->{'www-authenticate'}) eq ARRAY) {
+        @vals = @{ $result->{'www-authenticate'} };
+        }
+      else {
+        push(@vals, $result->{'www-authenticate'});
+        }
+      foreach my $val (@vals) {
+			  if ($val =~ /[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/ && $val !~ /$mark->{'ip'}/) {
+				    $wa=1;
+		        add_vulnerability($mark, "Microsoft Exchange Systems (CAS and OWA) may reveal the internal or real IP in the WWW-Authenticate header via a request over HTTP/1.0. The value is \"$val\".", 999986, 630, "GET", "$uri", $request, $result);
+            }
+		    }
+	    }
+    }
+
     #######################################################################
     # Location header in WebLogic
     # Clear out locheaders
@@ -289,27 +348,34 @@ sub nikto_headers {
     $locheaders{'User-Agent'} =~ s/\@TESTID/headers:\ WebLogic\ internal\ IP/;
 
     ($res, $content, $errors, $request, $result) =  nfetch($mark, '.', "GET", "", \%locheaders, \%flags, "headers: WebLogic internal IP", "1.0");
-
-    if (($result->{'location'} ne "") && ($result->{'location'} =~ /http:\/\//)) {
-        add_vulnerability($mark, "WebLogic may reveal its internal IP or hostname in the Location header. The value is \"$result->{'location'}\".", 999987, "OSVDB-5737", "GET", ".", $request, $result);
+    if (defined($result->{'location'})) {
+      my @loc;
+      if (ref($result->{'location'}) eq ARRAY) { @loc=@{ $result->{'location'} }; }
+      else { push(@loc,$result->{'location'}); }
+      foreach my $l (@loc) {
+      if (($l ne "") && ($l =~ /http:\/\//)) {
+        add_vulnerability($mark, "WebLogic may reveal its internal IP or hostname in the Location header. The value is \"$l\".", 999987, "OSVDB-5737", "GET", ".", $request, $result);
+        }
+        }
     }
-
 
 	# BREACH Checks
 	for (keys %locheaders) {
         delete $locheaders{$_};
     }
-    $locheaders{'Accept-Encoding'} = "deflate, gzip";
+  $locheaders{'Accept-Encoding'} = "deflate, gzip";
 	($res, $content, $errors, $request, $result) =  nfetch($mark, '/', "GET", "", \%locheaders, \%flags, "headers: BREACH Test", "1.1");
 
-	if (!$BREACH && defined $result && $mark->{'ssl'})
+	if (!$BREACH && defined($result->{'content-encoding'}) && $mark->{'ssl'})
 	{
-		if (defined $result->{'content-encoding'}) {
-			if ($result->{'content-encoding'} =~ "(deflate|gzip)") {
-				$BREACH=1;
-				add_vulnerability($mark,"The Content-Encoding header is set to \"deflate\" this may mean that the server is vulnerable to the BREACH attack.", 999966, "", $request->{'whisker'}->{'method'}, $request->{'whisker'}->{'uri'}, $request, $result);
+			if (ref($result->{'content-encoding'}) eq ARRAY) {
+          foreach my $ce (keys @{ $result->{'content-encoding'}} ) {
+            if ($ce =~ /(deflate|gzip)/i) { last; $BREACH=1; }
+          }
+      if ($BREACH) {
+				add_vulnerability($mark,"The Content-Encoding header is set to \"deflate\" or \"gzip\", this may mean that the server is vulnerable to the BREACH attack.", 999966, "", $request->{'whisker'}->{'method'}, $request->{'whisker'}->{'uri'}, $request, $result);
+        }
 			}
-		}
 	}
 }
 

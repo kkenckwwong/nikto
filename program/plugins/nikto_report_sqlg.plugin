@@ -142,21 +142,29 @@ sub sqlg_item {
 			}
 
 	# response content
-        my $response = $$item{'response'};
-	$rstring='';
-    	if ($response->{'whisker'}{'protocol'} ne '') {
+  my $response = $$item{'response'};
+  if ($response->{'whisker'}{'protocol'} ne '') {
     		$rstring = $response->{'whisker'}{'protocol'} . "/"
       		. $response->{'whisker'}{'version'} . " "
       		. $response->{'whisker'}{'code'} . " "
       		. $response->{'whisker'}{'message'} . "\n";
-    		foreach my $header (@{ $response->{'whisker'}{'header_order'} }) {
-        		$rstring .= $header . ": " . $response->{$header} . "\n";
-    			}
-    		$rstring .= "\n" . $response->{'whisker'}{'data'} . "\n";
+
+          foreach my $header (@{ $response->{'whisker'}{'header_order'} }) {
+              # Handle multiple headers with same name, e.g. set-cookie
+              if (ref($response->{$header}) eq ARRAY) {
+                foreach my $v (@{ $response->{$header} }) {
+                  $rstring .= $header . ": " . $v . "\n";
+                  }
+                }
+              else {
+                $rstring .= $header . ": " . $response->{$header} . "\n";
+                }
     		}
 
+        $rstring .= "\n" . $response->{'whisker'}{'data'} . "\n";
         $sql .= "'" . LW2::encode_base64($rstring,'') . "');";
         print $handle "$sql\n";
+        }
     }
 }
 

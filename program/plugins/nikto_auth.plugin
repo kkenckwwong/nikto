@@ -80,8 +80,13 @@ sub nikto_auth_pre {
 
 # Split up www-authenticate to realm and method
 sub split_auth_header {
-    my $header = $_[0] || return;
-    my ($realm, $authtype);
+    my ($realm, $authtype, $header);
+    if (ref($_[0])) {
+      $header = $_[0][0];
+      }
+    else {
+      $header = $_[0];
+      }
     my @authenticate = split(/=/, $header);
     if ($authenticate[0] =~ /^ntlm/i) {
         $realm = $authtype = 'ntlm';
