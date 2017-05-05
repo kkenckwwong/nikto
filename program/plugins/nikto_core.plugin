@@ -2439,9 +2439,8 @@ sub nfetch {
     }
 
     # Get the Server banner. LW may return an array.
-#    if (!exists $result{'whisker'}->{'error'}) {   # DO we care if it's an error or just an extra if slowing down each nfetch?
       if (exists $result{'server'}) {
-        if (ref($result{'server'})) {
+        if (ref($result{'server'}) eq ARRAY) {
           foreach my $b (@{$result{'server'}}) {
           if (!exists $mark->{'banner'}->{$b}) {
               $mark->{'banner'}->{$b}=1;
@@ -2468,7 +2467,6 @@ sub nfetch {
 		      }
         $mark->{'ssl_cert_altnames'} =~ s/, $//;
       }
-#    }
 
     nprint("- $result{'whisker'}{'code'} for $method:\t$result{'whisker'}->{'uri_requested'}", "v");
 
@@ -2491,6 +2489,9 @@ sub nfetch {
         }
     }
 
+    # Duplicate header test
+    duplicate_headers_check($mark, %result);
+
     # Run post hooks
     unless ($flags->{'nopostfetch'}) {
         ($request, %$result) = run_hooks($mark, "postfetch", \%request, \%result);
@@ -2501,6 +2502,20 @@ sub nfetch {
 
     return $result{'whisker'}->{'code'}, $result{'whisker'}->{'data'},
       $result{'whisker'}->{'error'}, \%request, \%result;
+}
+
+#######################################################################
+sub duplicate_headers_check {
+  my ($mark, %result) = @_;
+  my %counter;
+  foreach my $hdr (keys %result) {
+    next if $hdr eq 'whisker';
+    next if $hdr eq 'set-cookie';
+  if (ref($result{$hdr}) eq ARRAY) {
+    add_vulnerability($mark, "The HTTP header \"$hdr\" was sent more than once. Different web browsers may behave differently by only accepting the first or only accepting the last. This should be manually examined. ",
+      999099, "", $request->{'whisker'}->{'method'}, $request->{'whisker'}->{'uri'}, $request, $response);
+    }
+  }
 }
 
 #######################################################################
