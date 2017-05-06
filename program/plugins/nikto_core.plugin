@@ -1631,7 +1631,10 @@ sub port_check {
                 if (defined $content
                     && ( $content =~ /plain HTTP to an SSL/ ||
 					     $content =~ /The plain HTTP request was sent to HTTPS port/ )) {
-                    dump_var("Result Hash", \%result);
+                  if ($OUTPUT{'debug'}) {
+                      dump_var("Request Hash", \%request);
+                      dump_var("Result Hash", \%result);
+                    }
                     next;
                 }
                 nprint("- $checkssl Server found: "
@@ -2176,8 +2179,10 @@ sub proxy_check {
         sleeper();
         LW2::http_do_request_timeout(\%request, \%result);
         $COUNTERS{'totalrequests'}++;
-        dump_var("Request Hash", \%request);
-        dump_var("Result Hash",  \%result);
+        if ($OUTPUT{'debug'}) {
+          dump_var("Request Hash", \%request);
+          dump_var("Result Hash",  \%result);
+        }
 
         # First check that we can connect to the proxy
         if (exists $result{'whisker'}{'error'}) {
@@ -2212,8 +2217,10 @@ sub proxy_check {
             sleeper();
             LW2::http_do_request_timeout(\%request, \%result);
             $COUNTERS{'totalrequests'}++;
-            dump_var("Request Hash", \%request);
-            dump_var("Result Hash",  \%result);
+            if ($OUTPUT{'debug'}) {
+              dump_var("Request Hash", \%request);
+              dump_var("Result Hash",  \%result);
+              }
 
             if ($result{'proxy-authenticate'} ne "") {
                 my @pauthinfo  = split(/ /, $result{'proxy-authenticate'});
@@ -2234,7 +2241,6 @@ sub proxy_check {
 
 #######################################################################
 sub dump_var {
-    return if !$OUTPUT{'debug'};
     my $msg     = $_[0];
     my %hash_in = %{ $_[1] };
 
@@ -2509,10 +2515,9 @@ sub duplicate_headers_check {
   my ($mark, %result) = @_;
   my %counter;
   foreach my $hdr (keys %result) {
-    next if $hdr eq 'whisker';
-    next if $hdr eq 'set-cookie';
-  if (ref($result{$hdr}) eq ARRAY) {
-    add_vulnerability($mark, "The HTTP header \"$hdr\" was sent more than once. Different web browsers may behave differently by only accepting the first or only accepting the last. This should be manually examined. ",
+    next if ($hdr eq 'whisker' || $hdr eq 'set-cookie');
+    if (ref($result{$hdr}) eq ARRAY) {
+    add_vulnerability($mark, "The HTTP header \"$hdr\" was sent multiple times. Browser behavior may be erratic depending on which header is used. This should be manually examined. ",
       999099, "", $request->{'whisker'}->{'method'}, $request->{'whisker'}->{'uri'}, $request, $response);
     }
   }
