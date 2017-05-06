@@ -158,7 +158,7 @@ sub nikto_auth {
           }
 
         # Duplicate header test
-        duplicate_headers_check($mark, %response);
+        duplicate_headers_check($mark, \%result, \%request);
 
         $mark->{'realms'}{$realm}{'status'}   = 0;
         $mark->{'realms'}{$realm}{'id'}       = $entry->{'id'};

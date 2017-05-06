@@ -2496,7 +2496,7 @@ sub nfetch {
     }
 
     # Duplicate header test
-    duplicate_headers_check($mark, %result);
+    duplicate_headers_check($mark, \%result, \%request);
 
     # Run post hooks
     unless ($flags->{'nopostfetch'}) {
@@ -2512,13 +2512,13 @@ sub nfetch {
 
 #######################################################################
 sub duplicate_headers_check {
-  my ($mark, %result) = @_;
+  my ($mark, $result, $request) = @_;
   my %counter;
-  foreach my $hdr (keys %result) {
+  foreach my $hdr (keys %{$result}) {
     next if ($hdr eq 'whisker' || $hdr eq 'set-cookie');
-    if (ref($result{$hdr}) eq ARRAY) {
-    add_vulnerability($mark, "The HTTP header \"$hdr\" was sent multiple times. Browser behavior may be erratic depending on which header is used. This should be manually examined. ",
-      999099, "", $request->{'whisker'}->{'method'}, $request->{'whisker'}->{'uri'}, $request, $response);
+    if (ref($result->{$hdr}) eq ARRAY) {
+    add_vulnerability($mark, "$mark->{'root'}$request->{'whisker'}->{'uri'}: The HTTP header \"$hdr\" was sent multiple times. Browser behavior may be erratic depending on which header is used. This should be manually examined. ",
+      999099, "", $request->{'whisker'}->{'method'}, $request->{'whisker'}->{'uri'}, $request, $result);
     }
   }
 }
