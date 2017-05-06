@@ -152,8 +152,13 @@ sub nikto_auth {
         sleeper();
         LW2::http_do_request_timeout($request, $response);    # test auth
         $COUNTERS{'totalrequests'}++;
-        dump_var("Auth Request",  $request);
-        dump_var("Auth Response", $response);
+        if ($OUTPUT{'debug'}) {
+          dump_var("Auth Request",  $request);
+          dump_var("Auth Response", $response);
+          }
+
+        # Duplicate header test
+        duplicate_headers_check($mark, %response);
 
         $mark->{'realms'}{$realm}{'status'}   = 0;
         $mark->{'realms'}{$realm}{'id'}       = $entry->{'id'};
