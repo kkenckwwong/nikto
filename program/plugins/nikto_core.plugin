@@ -824,6 +824,23 @@ sub general_config {
 		$NIKTO{'POSIX'}{'noecho'} = $oterm & ~$echo;
 	}
 
+  # Cgidirs
+  if (defined $CLI{'forcecgi'} && $CLI{'forcecgi'} eq "all")  # all possible CGI dirs to be "true"
+  {
+      nprint("Using all known CGI directories\n", "v");
+      #$VARIABLES{'@CGIDIRS'} = join(" ", @CFGCGI);
+  }
+  elsif (defined $CLI{'forcecgi'} && $CLI{'forcecgi'} eq "none")    # scan no CGI directories
+  {
+      nprint("Using no CGI directories\n", "v");
+      $VARIABLES{'@CGIDIRS'} = "";
+  }
+  elsif (defined $CLI{'forcecgi'} && $CLI{'forcecgi'} ne "")   # scan a specific directory
+  {
+      nprint("Using CGI dir \'$CLI{'forcecgi'}\'\n", "v");
+      $VARIABLES{'@CGIDIRS'} = $CLI{'forcecgi'};
+  }
+
     if ($CLI{'pause'} > 0) {
         nprint("-***** Pausing $CLI{'pause'} second(s) per request");
     	}

@@ -12,7 +12,7 @@
 #  GNU General Public License for more details.
 #
 #  You should have received a copy of the GNU General Public License
-#  along with this program; if not, write to 
+#  along with this program; if not, write to
 #  Free Software Foundation, 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 ###############################################################################
 # PURPOSE:
@@ -30,31 +30,15 @@ sub nikto_cgi_init {
 }
 
 sub nikto_cgi {
+    # If -Cgidirs was passed, we don't need to check
+    if (defined $CLI{'forcecgi'}) { return; }
+
     my ($mark) = @_;
     my ($gotvalid, $gotinvalid) = 0;
     my @POSSIBLECGI = ();
-    my @CFGCGI = (split(/ /, $VARIABLES{'@CGIDIRS'}));
     my ($res, $content, $possiblecgidir, $found) = "";
 
-    if (defined $CLI{'forcecgi'} && $CLI{'forcecgi'} eq "all")  # all possible CGI dirs to be "true"
-    {
-        nprint("Using all known CGI directories\n", "d");
-        $VARIABLES{'@CGIDIRS'} = join(" ", @CFGCGI);
-    }
-    elsif (defined $CLI{'forcecgi'} && $CLI{'forcecgi'} eq "none")    # scan no CGI directories
-    {
-        nprint("Using no CGI directories\n", "d");
-        $VARIABLES{'@CGIDIRS'} = "";
-    }
-    elsif (defined $CLI{'forcecgi'}
-           && $CLI{'forcecgi'} =~ /[a-zA-Z0-9]/)                      # scan a specific directory
-    {
-        nprint("Using CGI dir \'$CLI{'forcecgi'}\'\n", "d");
-        $VARIABLES{'@CGIDIRS'} = $CLI{'forcecgi'};
-    }
-    else    # or normal testing of each dir
-    {
-        foreach $possiblecgidir (@CFGCGI) {
+    foreach $possiblecgidir (split(/ /, $VARIABLES{'@CGIDIRS'})) {
             return if $mark->{'terminate'};
             ($res, $content) = nfetch($mark, $possiblecgidir, "GET", "", "", "", "cgi dir check");
             nprint("Checked for CGI dir\t$possiblecgidir\tgot:$res", "d");
@@ -75,7 +59,6 @@ sub nikto_cgi {
         else {
             $VARIABLES{'@CGIDIRS'} = join(" ", @POSSIBLECGI);
         }
-    }    # end !$CLI{'forcecgi'}
 
     nprint("- Checking for CGI in: $VARIABLES{'@CGIDIRS'}", "v");
 }
