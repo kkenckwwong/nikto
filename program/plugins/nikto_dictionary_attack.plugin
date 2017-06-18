@@ -49,9 +49,6 @@ sub nikto_dictionary_attack {
         && defined $parameters->{'dictionary'}) {
         $dictfile = $parameters->{'dictionary'};
     }
-    elsif (defined($CLI{'mutate-options'})) {
-        $dictfile = $CLI{'mutate-options'};
-    }
     else {
         nprint("- No dictionary file given in plugin options, skipping check", "v");
         return;
@@ -64,7 +61,7 @@ sub nikto_dictionary_attack {
     my $ctr = 0;
 
     if (!defined $dictfile) {
-        nprint("- No dictionary file given in mutate-options, skipping check");
+        nprint("- No dictionary file given to run, skipping check");
         return;
     }
 

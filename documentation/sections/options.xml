@@ -148,33 +148,6 @@ style output</para>
     </varlistentry>
 
     <varlistentry>
-      <term><option>-mutate</option></term>
-      <listitem>
-        <para>Specify mutation technique. A mutation will cause Nikto to
-combine tests or attempt to guess values. These techniques may cause
-a tremendous amount of tests to be launched against the target. Use
-the reference number to specify the type, multiple may be
-used:</para>
-        <para>1 - Test all files with all root directories</para>
-        <para>2 - Guess for password file names</para>
-        <para>3 - Enumerate user names via Apache (/~user type
-requests)</para>
-        <para>4 - Enumerate user names via cgiwrap (/cgi-bin/cgiwrap/~user
-type requests)</para>
-        <para>5 - Attempt to brute force sub-domain names, assume that
-        the host name is the parent domain</para>
-        <para>6 - Attempt to guess directory names from the supplied
-        dictionary file</para>
-      </listitem>
-    </varlistentry>
-    <varlistentry>
-      <term><option>-mutate-options</option></term>
-      <listitem>
-        <para>Provide extra information for mutates, e.g. a dictionary
-        file</para>
-      </listitem>
-    </varlistentry>
-    <varlistentry>
       <term><option>-nolookup</option></term>
       <listitem>
         <para>Do not perform name lookups on IP addresses.</para>
