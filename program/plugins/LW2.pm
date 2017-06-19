@@ -5152,6 +5152,7 @@ sub _stream_ssl_open {
 	eval {
             $xr->{sock}           = Net::SSL->new(
                 PeerAddr => $xr->{chost},
+                SSL_hostname => $xr->{chost},
                 PeerPort => $xr->{cport},
                 Timeout  => $xr->{timeout}
             );
@@ -5174,6 +5175,7 @@ sub _stream_ssl_open {
         return _stream_err( $xr, 0, 'ssl ctx create' )
           if ( !( $xr->{ctx} = Net::SSLeay::CTX_new() ) );
         Net::SSLeay::CTX_set_options( $xr->{ctx}, &Net::SSLeay::OP_ALL );
+        Net::SSLeay::CTX_set_tlsext_host_name( $xr->{ctx}, $xr->{chost} );
         if ( defined $W->{ssl_rsacertfile} ) {
             if (
                 !(
